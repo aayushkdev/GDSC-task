@@ -1,144 +1,97 @@
-# CTF Writeup: Pack and Ship
+# CTF Writeup: Hidden Pixels
 
 ## Challenge Overview
 
-In this challenge, I was given a binary file named `release`. The task was to extract an obfuscated password and flag using reverse engineering techniques.
+I was trying to analyse and extract hidden data from `output.bmp` using various steganography and forensic techniques. Here’s a step-by-step log of everything I tried.
 
 ---
 
+## 1. Checking Metadata
 
-## 🔹 Step 1: Initial Analysis
-
-First, I used the `strings` command to see if there was any readable text inside the binary.
+First, I used `exiftool` to extract metadata from the image:
 
 ```
-strings release | less
+exiftool output.bmp
 ```
 
 **Findings:**
 
-* The binary appeared to be packed with UPX.
----
-
-## 🔹 Step 2: Unpacking the Binary
-
-Since the binary was UPX-packed, I unpacked it.
-
-```
-upx -d release
-```
-
-Then, I ran the `strings` command again.
-
-```
-strings release | less
-```
-
-This time, I saw more useful information, including references to `obfuscated_password`, `obfuscated_flag`, and a function called `deobfuscate`.
+* Found that the image is a Windows V5 BMP with 32-bit depth.
+* Detected sRGB color space and an alpha channel.
 
 ---
 
-## 🔹 Step 3: Disassembling the Binary
+## 2. Checking for Steganography with steghide
 
-Next, I opened the binary in GDB for further analysis.
-
-```
-gdb release
-```
-
-I disassembled the `main` function to understand its logic.
+I ran `steghide` to check if any data is hidden:
 
 ```
-disassemble main
+steghide info output.bmp
 ```
 
-```assembly
-Dump of assembler code for function main:
-    0x0000000000001284 <+0>:     push    %rbp
-    0x0000000000001285 <+1>:     mov     %rsp,%rbp
-    0x0000000000001288 <+4>:     sub     $0xb0,%rsp
-    0x000000000000128f <+11>:    mov     %fs:0x28,%rax
-    0x0000000000001298 <+20>:    mov     %rax,-0x8(%rbp)
-    0x000000000000129c <+24>:    xor     %eax,%eax
-    0x000000000000129e <+26>:    movq    $0x0,-0x40(%rbp)
-    0x00000000000012a6 <+34>:    movq    $0x0,-0x38(%rbp)
-    0x00000000000012ae <+42>:    movq    $0x0,-0x30(%rbp)
-    0x00000000000012b6 <+50>:    movq    $0x0,-0x28(%rbp)
-    0x00000000000012be <+58>:    movq    $0x0,-0x20(%rbp)
-    0x00000000000012c6 <+66>:    movq    $0x0,-0x18(%rbp)
-    0x00000000000012ce <+74>:    movl    $0x0,-0x11(%rbp)
-    0x00000000000012d5 <+81>:    lea     -0xa0(%rbp),%rax
-    0x00000000000012dc <+88>:    mov     $0x20,%edx
-    0x00000000000012e1 <+93>:    lea     0xd58(%rip),%rcx          # 0x2040 <obfuscated_password>
-    0x00000000000012e8 <+100>:   mov     %rcx,%rsi
-    0x00000000000012eb <+103>:   mov     %rax,%rdi
-    0x00000000000012ee <+106>:   call    0x1189 <deobfuscate> 
-    0x00000000000012f3 <+111>:   lea     -0x70(%rbp),%rax
-    0x00000000000012f7 <+115>:   mov     $0x23,%edx
-    0x00000000000012fc <+120>:   lea     0xd5d(%rip),%rcx          # 0x2060 <obfuscated_flag>
-    0x0000000000001303 <+127>:   mov     %rcx,%rsi
-    0x0000000000001306 <+130>:   mov     %rax,%rdi
-    0x0000000000001309 <+133>:   call    0x1189 <deobfuscate>
-    0x000000000000130e <+138>:   lea     0xd6e(%rip),%rax          # 0x2083
-    0x0000000000001315 <+145>:   mov     %rax,%rdi
-```
+**Result:**
 
-**Findings in `main`:**
-
-* The `main` function called `deobfuscate()` twice:
-    * Once for `obfuscated_password`.
-    * Once for `obfuscated_flag`.
-* The password was stored at memory location `0x2040`.
-* The flag was stored at `0x2060`.
+* Got an error: the bmp file has a format that is not supported (biSize: 124).
+* Since `steghide` does not support BMP V5, I had to convert it to an older format.
 
 ---
 
-## 🔹 Step 4: Setting a Breakpoint in `deobfuscate()`
+## 3. Converting BMP Version
 
-I set a breakpoint at the `deobfuscate` function.
-
-```
-b *0x0000555555555189
-```
-
-Then, I ran the program.
+Tried converting the BMP file using `ffmpeg`:
 
 ```
-run
+ffmpeg -i output.bmp -pix_fmt rgb24 output_v3.bmp
 ```
 
-When it stopped at the breakpoint, I continued as the password was not yet in `obfuscated_password`.
+**Result:**
 
-```
-continue
-```
----
-
-## 🔹 Step 5: Extracting the Deobfuscated Password
-
-I inspected the memory address of `obfuscated_password` to see the deobfuscated password.
-
-```
-x/s $rbp-0xa0
-```
-
-The output was: `bt8uA1uxF350yZLuto9GmqTWJBpP2jUq`
-
-This is the correct password
+* This converted successfully to a Windows 3.x format, 24-bit depth BMP.
 
 ---
 
-## 🔹 Step 7: Testing the Password and Retrieving the Flag
+## 4. Checking steghide Again
 
-I ran the program directly and entered the extracted password.
+Tried `steghide` on `output_v3.bmp`:
+
 ```
-./release
-Enter the password: bt8uA1uxF350yZLuto9GmqTWJBpP2jUq
-Correct password! Here is the flag: gdsc{unp4ck1n6_b1n4r135_15_n4u6h7y}
+steghide info output_v3.bmp
 ```
+
+**Result:**
+
+* This time, it asked for a password, meaning there might be hidden data inside.
 
 ---
 
-## Result:
+## 5. Using zsteg for LSB Steganography
 
-I obtained the flag `gdsc{unp4ck1n6_b1n4r135_15_n4u6h7y}`.
+I ran `zsteg` to check for hidden Least Significant Bit (LSB) data:
+
+```
+zsteg output_v3.bmp
+```
+
+**Findings:**
+
+* Found some hidden text:
+    * `b4,r,lsb,xy -> "DC4&vjhf"`
+    * `b4,g,lsb,xy -> "3WDeQTC13>F"`
+    * `b3,g,lsb,xy -> "u(/dFdLG"`
+    * `b3,rgb,lsb,xy -> "oX =@\rp%"`
+    * `b3,r,msb,xy -> OpenPGP Public Key`
+* The OpenPGP key might be interesting, but I already tried extracting and analyzing it, and it did not give any results.
+
+---
+
+## 6. Bruteforcing steghide
+
+Since `steghide` needed a password, I tried brute-forcing:
+
+```
+stegcracker output_v3.bmp wordlist.txt
+```
+
+**Result:**
+
+* Bruteforcing didn't work, so the password remains unknown.

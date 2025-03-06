@@ -98,7 +98,7 @@ Dump of assembler code for function main:
 I set a breakpoint at the `deobfuscate` function.
 
 ```
-b *0x0000555555555189
+b deobfuscate
 ```
 
 Then, I ran the program.
@@ -107,11 +107,14 @@ Then, I ran the program.
 run
 ```
 
-When it stopped at the breakpoint, I continued as the password was not yet in `obfuscated_password`.
+When it stopped at the breakpoint, I executed the function completely to return to the main function.
 
 ```
-continue
+finish
 ```
+
+Now `0xa0` address had the value of the deobfuscated password.
+
 ---
 
 ## 🔹 Step 5: Extracting the Deobfuscated Password
@@ -139,6 +142,6 @@ Correct password! Here is the flag: gdsc{unp4ck1n6_b1n4r135_15_n4u6h7y}
 
 ---
 
-## Result:
+# Result:
 
 I obtained the flag `gdsc{unp4ck1n6_b1n4r135_15_n4u6h7y}`.

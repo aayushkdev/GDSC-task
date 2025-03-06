@@ -119,7 +119,8 @@ zsteg output_v3.bmp
   `b3,rgb,lsb,xy -> "oX =@\rp%"`
   `b3,r,msb,xy -> OpenPGP Public Key`
   ```
-* The OpenPGP key might be interesting, but I already tried extracting and analyzing it, and it did not give any results.
+* The presence of an OpenPGP Public Key seemed promising, so I attempted to extract and analyze it using gpg and strings but was unable to retrieve any meaningful data.
+* This suggests that the detected key might be false positive or just noise in the image.
 
 ---
 

@@ -133,7 +133,7 @@ This is the correct password
 
 ---
 
-## 🔹 Step 7: Testing the Password and Retrieving the Flag
+## 🔹 Step 6: Testing the Password and Retrieving the Flag
 
 I ran the program directly and entered the extracted password.
 ```

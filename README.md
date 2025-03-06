@@ -88,12 +88,14 @@ Dump of assembler code for function main:
 * The `main` function called `deobfuscate()` twice:
     * Once for `obfuscated_password`.
     * Once for `obfuscated_flag`.
-* The password was stored at memory location `0x2040`.
-* The flag was stored at `0x2060`.
+* The obfuscated password was stored at memory location `0x2040`.
+* The password after deobfuscation was stored at memory location `0xa0`.
 
 ---
 
 ## 🔹 Step 4: Setting a Breakpoint in `deobfuscate()`
+
+To find the password, I had to inspect the variable where it was stored after the `deobfuscate` function executed.
 
 I set a breakpoint at the `deobfuscate` function.
 

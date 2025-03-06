@@ -69,6 +69,7 @@ ffmpeg -i output.bmp -pix_fmt rgb24 output_v3.bmp
 **Result:**
 
 * This converted successfully to a Windows 3.x format, 24-bit depth BMP.
+* Also the negative width issue was resolved.
 
 ---
 
